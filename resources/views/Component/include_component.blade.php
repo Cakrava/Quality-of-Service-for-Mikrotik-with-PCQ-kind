@@ -1,0 +1,5 @@
+@include('Component.modal_configure_address')
+@include('Component.modal_configure_interface')
+@include('Component.modal_configure_queue_type')
+@include('Component.modal_configure_simple_queue')
+@include('Component.modal_logout')
