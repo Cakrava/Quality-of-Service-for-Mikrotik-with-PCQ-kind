@@ -3,7 +3,7 @@
 @section('content')
 <?php $queue = ['name' => '']; ?>
 
-<div class="right_col" role="main">
+<div class="right_col" role="main" style="margin-bottom:  :20px">
   <h2>Dashboard</h2>
 
   <div style="display: flex; flex-direction: row; gap: 10px;">  <!-- Gunakan flexbox untuk mengatur posisi card -->
@@ -52,15 +52,92 @@
   </div>
   <div style="display: flex; flex-direction: row; gap: 10px;">
 <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px;width: 50%">
-     <p><i class="fa fa-link"></i> Address</p>
+  <div style="display: flex; flex-direction: row; justify-content: space-between;">   
+  <p><i class="fa fa-link"></i> Address</p>
+  ><a href="{{ route('network.address') }}"><i class="fa fa-pencil-square-o"></i> Manage address</a>
+</div>
+     <table class="table table-striped">
+      <thead>
+          <tr>
+              <th>Address</th>
+              <th>Network</th>
+              <th>Interface</th>
+              <th>Dynamic</th>
+             
+          </tr>
+      </thead>
+      <tbody> 
+          @foreach($address as $address)
+          <tr>
+              <td>{{ $address['address'] }}</td>
+              <td>{{ $address['network'] }}</td>
+              <td>{{ $address['interface'] }}</td>
+              <td>{{ $address['dynamic'] == 'true' ? 'Yes' : 'No' }}</td>
+              
+          </tr>
+          @endforeach
+      </tbody>
+  </table>
     </div>
+
     <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px;width: 50%">
-         <p><i class="fa fa-cloud"></i> DNS</p>
+         <p><i class="fa fa-user"></i> Login profile</p>
+         <p>Logged in as: <strong>{{ session('user') }}</strong></p>
+         <p>Last login: <strong>{{ session('login_time') }}</strong></p>
+         <p>Connected to: <strong>{{ session('host') }}</strong></p>
         </div>
     
 </div>
 <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px">
-     <p><i class="fa fa-list"></i> Queue list</p>
+     <div style="display: flex; flex-direction: row; justify-content: space-between;">
+      <p><i class="fa fa-list"></i> Queue list</p>
+         
+      ><a href="{{ route('qos.simple_queue') }}"><i class="fa fa-pencil-square-o"></i> Manage queue</a>
+         
+     </div>
+
+     <table class="table table-striped table-hover">
+      <thead>
+          <tr>
+              <th>Queue Name</th>
+              <th>Target</th>
+              <th>Max Upload</th>
+              <th>Max Download</th>
+              <th>Queue Type</th>
+              <th>Rate</th>
+          </tr>
+      </thead>
+      <tbody>
+          @foreach($simpleQueue as $queue)
+          <tr>
+              <td>{{ $queue['name'] }}</td>
+              <td>{{ $queue['target'] }}</td>
+      <td>
+{{
+(int)(explode('/', $queue['max-limit'])[0]) == 0 
+? 'Unlimited' 
+: ((int)(explode('/', $queue['max-limit'])[0]) >= 1000000 
+? (int)(explode('/', $queue['max-limit'])[0]) / 1000000 . 'M' 
+: (int)(explode('/', $queue['max-limit'])[0]) / 1000 . 'k')
+}}
+</td>
+<td>
+{{
+(int)(explode('/', $queue['max-limit'])[1]) == 0 
+? 'Unlimited' 
+: ((int)(explode('/', $queue['max-limit'])[1]) >= 1000000 
+? (int)(explode('/', $queue['max-limit'])[1]) / 1000000 . 'M' 
+: (int)(explode('/', $queue['max-limit'])[1]) / 1000 . 'k')
+}}
+</td>
+              <td>{{ $queue['queue'] }}</td>
+              <td>{{ $queue['rate'] }}</td>
+              
+          </tr>
+          @endforeach
+      </tbody>
+  </table>
+
     </div>
 </div>
 

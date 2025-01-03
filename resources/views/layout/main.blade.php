@@ -4,7 +4,6 @@
 <html lang="en">
    @include('Component.include_component')
    <head>
-    @include('Component.include_component')
   
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <!-- Meta, title, CSS, favicons, etc. -->
@@ -47,13 +46,9 @@
         <!-- /page content -->
       
 
+        <div class="clearfix"></div>
         <!-- footer content -->
-        <footer>
-          <div class="pull-right">
-            <a href="{{ route('dashboard.dashboard') }}">Per Connection Queue</a>
-          </div>
-          <div class="clearfix"></div>
-        </footer>
+       
         <!-- /footer content -->
       </div>
     </div>

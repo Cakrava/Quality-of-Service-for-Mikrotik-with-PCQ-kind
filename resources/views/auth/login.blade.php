@@ -74,7 +74,7 @@
                 <br />
                
                 <div>
-                  <h1><i class="fa fa-cogs"></i> Mikrotik Configuration</h1>
+                  
                   <p>©2024 Halaman Konfigurasi Mikrotik</p>
                   <p>Proyek Skripsi 2024</p>
                 </div>

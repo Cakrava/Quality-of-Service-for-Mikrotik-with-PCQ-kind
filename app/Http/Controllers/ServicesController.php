@@ -158,14 +158,13 @@ class ServicesController extends Controller
 
         if ($API->connect($ip, $user, $password)) {
             $simpleQueue = $API->comm('/queue/simple/print');
-            $interface = $API->comm('/interface/print');
+  
             $queueType = $API->comm('/queue/type/print', ['?kind' => 'pcq']); // Mengambil data queue type dengan kind pcq saja
-            $address = $API->comm('/ip/address/print');
+
             $data = [
                 'simpleQueue' => $simpleQueue,
-                'interface' => $interface,
+                
                 'queueType' => $queueType, // Menambahkan data queue type ke array
-                'address' => $address,
             ];
 
             session()->put('active_page', 'queue_type');

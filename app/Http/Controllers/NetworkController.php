@@ -33,18 +33,14 @@ class NetworkController extends Controller
         $API->debug = false;
 
         if ($API->connect($ip, $user, $password)) {
-            $simpleQueue = $API->comm('/queue/simple/print');
+            
             $interface = $API->comm('/interface/print');
             $address = $API->comm('/ip/address/print');
-            $queueType = $API->comm('/queue/type/print');
-            $simpleQueueType = $API->comm('/queue/simple/type/print');
 
             $data = [
-                'simpleQueue' => $simpleQueue,
                 'interface' => $interface,
                 'address' => $address,
-                'queueType' => $queueType,
-                'simpleQueueType' => $simpleQueueType,
+                
             ];
 
             session()->put('active_page', 'address');
@@ -149,99 +145,33 @@ class NetworkController extends Controller
         }
     }
 
+function clientList(){
+    $ip = session()->get('ip');
+    $user = session()->get('user');
+    $password = session()->get('password');
+    $API = new RouterosApi();
+    $API->debug = false;
 
+    if ($API->connect($ip, $user, $password)) {
+        // Ambil daftar lease DHCP
+        $dhcpLeases = $API->comm('/ip/dhcp-server/lease/print');
 
-    public function clientList()
-    {
-        $ip = 'id-29.hostddns.us:8381';
-        $user = 'admin';
-        $password = 'moko';
-        $API = new RouterosApi();
-        $API->debug = false;
+        $simpleQueue = $API->comm('/queue/simple/print');
+        $interface = $API->comm('/interface/print');
+        $address = $API->comm('/ip/address/print');
+        $queueType = $API->comm('/queue/type/print');
+        $simpleQueueType = $API->comm('/queue/simple/type/print');
 
-        if ($API->connect($ip, $user, $password)) {
-            // Ambil daftar lease DHCP
-            $leases = $API->comm('/ip/dhcp-server/lease/print');
-            // Ambil daftar alamat IP
-            $address = $API->comm('/ip/address/print');
-            $interface = $API->comm('/interface/print');
-            $queueType = $API->comm('/queue/type/print');
-            $simpleQueue = $API->comm('/queue/simple/print');
-            // Menyimpan interface target
-            $targetInterface = null;
-            $targetIp = null;
+        $data = [
+            'dhcpLeases' => $dhcpLeases,
+        ];
 
-            // Memeriksa setiap alamat IP yang terkonfigurasi di MikroTik
-            foreach ($address as $address) {
-                if (isset($address['network']) && isset($address['interface'])) {
-                    $networkIp = $address['network']; // Mengambil alamat network
-
-                    foreach ($leases as $lease) {
-                        if (isset($lease['address'])) {
-                            $targetIp = $lease['address'];
-                            $targetHostName = $lease['host-name'];
-
-                            // Simpan alamat sumber ke dalam file JSON lokal
-
-                            // Bandingkan tiga oktet pertama dari lease IP dan network IP
-                            $leaseIpPrefix = implode('.', array_slice(explode('.', $targetIp), 0, 3));
-                            $networkIpPrefix = implode('.', array_slice(explode('.', $networkIp), 0, 3));
-
-                            if ($leaseIpPrefix === $networkIpPrefix) {
-                                $targetInterface = $address['interface'];
-
-                                break 2; // Keluar dari kedua loop
-                            }
-                        }
-                    }
-                }
-            }
-            $existingData = json_decode(file_get_contents(app_path('client_data.json')), true);
-            $newData = [
-                'src_address' => $targetIp,
-                'interface' => $targetInterface,
-                'host_name' => $targetHostName,
-            ];
-
-            // Periksa apakah data sudah ada sebelumnya
-            $existingDataKeys = array_column($existingData, 'src_address');
-            if (!in_array($targetIp, $existingDataKeys)) {
-                // Tidak ada, maka tambah data baru
-                $existingData[] = $newData;
-
-                // Encode menjadi JSON
-                $jsonData = json_encode($existingData, JSON_PRETTY_PRINT);
-
-                // Simpan data ke file JSON
-                file_put_contents(app_path('client_data.json'), $jsonData);
-            }
-
-            // Ambil data torch hanya jika IP dan interface ditemukan
-            $torchData = null;
-            if ($targetInterface && $targetIp) {
-                $torch = $API->comm('/tool/torch', [
-                    'interface' => $targetInterface,
-                    'src-address' => $targetIp,
-                    'duration' => '5s'
-                ]);
-                $torchData = !empty($torch) ? end($torch) : null;
-            }
-
-            // Mengirim data ke view
-            return view('Network.clientList', [
-                'leases' => $leases,
-                'address' => $address,
-                'torch' => $torchData,
-                'target_ip' => $targetIp,
-                'target_interface' => $targetInterface,
-                'interface' => $interface,
-                'queueType' => $queueType,
-                'simpleQueue' => $simpleQueue,
-            ]);
-        } else {
-            return view('Network.clientList', ['error' => 'Gagal terhubung ke MikroTik']);
-        }
+        session()->put('active_page', 'clientList');
+        return view('Network.clientList', $data);
+    } else {
+        return redirect('failed');
     }
+}
 
 
     public function fetchClientData()
