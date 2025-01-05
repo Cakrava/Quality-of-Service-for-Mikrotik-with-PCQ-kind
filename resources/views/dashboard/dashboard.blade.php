@@ -3,13 +3,16 @@
 @section('content')
 <?php $queue = ['name' => '']; ?>
 
-<div class="right_col" role="main" style="margin-bottom:  :20px">
-  <h2>Dashboard</h2>
+<div class="right_col" role="main" style="margin-bottom: :20px">
+  <div class="card" style="border-radius: 10px; background-color: white; padding: 10px 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 100%;margin-bottom : 10px;margin-top :50px">
+  <h2 style="margin-left: 20px">Dashboard</h2>
+  </div>
 
   <div style="display: flex; flex-direction: row; gap: 10px;">  <!-- Gunakan flexbox untuk mengatur posisi card -->
     <!-- Card pertama (tabel interfaces) -->
     <div class="card" style="border-radius: 10px; background-color: white; padding: 10px 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 60%;">
-      <div class="card-body">
+      <div class="card-body" style="padding: 10px">
+        <p><i class="fa fa-plug"></i> Interface</p>
         <table class="table table-striped">
           <thead>
             <tr>
@@ -48,8 +51,13 @@
     <!-- Card kedua (misalnya, card yang menampilkan "res") -->
     <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 40%;">
     <p><i class="fa fa-line-chart"></i> Wireless statistic</p>
+    <canvas id="interfaceTrafficChart"></canvas>
+         
     </div>
   </div>
+
+
+
   <div style="display: flex; flex-direction: row; gap: 10px;">
 <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px;width: 50%">
   <div style="display: flex; flex-direction: row; justify-content: space-between;">   
@@ -80,14 +88,39 @@
   </table>
     </div>
 
+
     <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px;width: 50%">
-         <p><i class="fa fa-user"></i> Login profile</p>
-         <p>Logged in as: <strong>{{ session('user') }}</strong></p>
-         <p>Last login: <strong>{{ session('login_time') }}</strong></p>
-         <p>Connected to: <strong>{{ session('host') }}</strong></p>
+         <p><i class="fa fa-chain-broken"></i> Traffic monitor</p>
+       
+    <div class="form-group">
+      <label for="interfaceSelect">Select Interface</label>
+      <select class="form-control" id="interfaceSelect">
+        @foreach($interfaces as $interface)
+          <option value="{{ $interface['name'] }}" data-id="{{ $interface['.id'] }}" data-name="{{ $interface['name'] }}">
+            {{ $interface['name'] }}
+          </option>
+        @endforeach
+      </select>      
+    </div>
+    <p id="loader-message" style="font-weight: bold; color: teal; text-align: left;">Initializing...</p>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>IP</th>
+          <th>Hostname</th>
+          <th>MAC Address</th>
+          <th>TX (Transmit)</th>
+          <th>RX (Receive)</th>
+        </tr>
+      </thead>
+  <tbody id="traffic-table-body">
+        <!-- Data will be populated here -->
+      </tbody>
+    </table>
         </div>
     
 </div>
+
 <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px">
      <div style="display: flex; flex-direction: row; justify-content: space-between;">
       <p><i class="fa fa-list"></i> Queue list</p>
@@ -140,31 +173,119 @@
 
     </div>
 </div>
-
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 <script>
 let previousData = {};
 let interfacesData = [];  // Variabel global untuk menyimpan data interfaces
+let currentRequest = null;  // Variabel untuk menyimpan request saat ini
+let isFetching = false;  // Flag untuk menandai apakah sedang melakukan fetch
 
-function fetchInterfaces() {
-    $.ajax({
-        url: '/fetch-interfaces',
+// Data untuk bar chart
+const interfaceTrafficData = {
+    labels: [], // Nama-nama interface (akan diisi dari data tabel)
+    datasets: [
+        {
+            label: 'TX (Transmit)', // Label untuk TX
+            data: [], // Data TX (akan diisi dari data tabel)
+            backgroundColor: 'rgba(54, 162, 235, 0.5)', // Warna untuk TX
+            borderColor: 'rgba(54, 162, 235, 1)', // Warna border untuk TX
+            borderWidth: 1 // Ketebalan border
+        },
+        {
+            label: 'RX (Receive)', // Label untuk RX
+            data: [], // Data RX (akan diisi dari data tabel)
+            backgroundColor: 'rgba(75, 192, 192, 0.5)', // Warna untuk RX
+            borderColor: 'rgba(75, 192, 192, 1)', // Warna border untuk RX
+            borderWidth: 1 // Ketebalan border
+        }
+    ]
+};
+
+// Konfigurasi chart
+const config = {
+    type: 'bar', // Jenis chart (bar chart)
+    data: interfaceTrafficData,
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true // Mulai sumbu Y dari 0
+            }
+        },
+        responsive: true, // Chart responsif
+        plugins: {
+            legend: {
+                position: 'top', // Posisi legend
+            },
+            tooltip: {
+                enabled: true // Aktifkan tooltip
+            }
+        }
+    }
+};
+
+// Buat bar chart
+const interfaceTrafficChart = new Chart(
+    document.getElementById('interfaceTrafficChart'), // Elemen canvas
+    config // Konfigurasi chart
+);
+
+// Fungsi untuk mengupdate data bar chart berdasarkan data tabel
+function updateChartFromTable() {
+    const labels = []; // Nama-nama interface
+    const txData = []; // Data TX
+    const rxData = []; // Data RX
+
+    // Loop melalui setiap baris di tabel
+    $('#interface-table-body tr').each(function () {
+        const cells = $(this).find('td'); // Ambil semua sel di baris ini
+        labels.push(cells.eq(0).text()); // Nama interface (kolom pertama)
+        txData.push(parseFloat(cells.eq(4).text())); // TX (kolom kelima)
+        rxData.push(parseFloat(cells.eq(5).text())); // RX (kolom keenam)
+    });
+
+    // Update data chart
+    interfaceTrafficChart.data.labels = labels;
+    interfaceTrafficChart.data.datasets[0].data = txData;
+    interfaceTrafficChart.data.datasets[1].data = rxData;
+    interfaceTrafficChart.update(); // Render ulang chart
+}
+
+// Fungsi untuk mengambil data interface dan traffic secara bersamaan
+function fetchData() {
+    if (isFetching) {
+        return;
+    }
+
+    const selectedInterface = $('#interfaceSelect').find(":selected").data('id');
+    const selectedInterfaceName = $('#interfaceSelect').find(":selected").data('name');
+
+
+    if (currentRequest) {
+        currentRequest.abort();
+    }
+
+    isFetching = true;
+    setLoaderMessage(`Getting data from interface ${selectedInterfaceName}...`);
+
+    currentRequest = $.ajax({
+        url: '/fetch-all-data',
         method: 'GET',
+        data: { interface: selectedInterface },
         success: function (data) {
-            interfacesData = data.interfaces;  // Simpan data interfaces ke dalam variabel global
-            const rows = data.interfaces.map(function (interface) {
+            // Simpan data interfaces ke variabel global
+            interfacesData = data.interfaces;  // <-- Ini yang perlu diperbaiki
+
+            // Proses data interfaces
+            const interfaceRows = data.interfaces.map(function (interface) {
                 const currentTx = interface['tx-byte'] || 0;
                 const currentRx = interface['rx-byte'] || 0;
                 const previousTx = previousData[interface['name']]?.tx || 0;
                 const previousRx = previousData[interface['name']]?.rx || 0;
 
-                // Hitung kecepatan dalam byte per detik, lalu konversi ke kbps
-                const txSpeedKbps = ((currentTx - previousTx) * 8 / 1000).toFixed(2); // konversi byte ke kbps
-                const rxSpeedKbps = ((currentRx - previousRx) * 8 / 1000).toFixed(2); // konversi byte ke kbps
+                const txSpeedKbps = ((currentTx - previousTx) * 8 / 1000).toFixed(2);
+                const rxSpeedKbps = ((currentRx - previousRx) * 8 / 1000).toFixed(2);
 
-                // Simpan data saat ini untuk perbandingan di polling berikutnya
                 previousData[interface['name']] = {
                     tx: currentTx,
                     rx: currentRx
@@ -176,7 +297,7 @@ function fetchInterfaces() {
                         <td>${interface['type']}</td>
                         <td>${interface['mac-address']}</td>
                         <td>${interface['running'] ? 'Running' : 'Not Running'}</td>
-                        <td >${txSpeedKbps} kbps</td>
+                        <td>${txSpeedKbps} kbps</td>
                         <td>${rxSpeedKbps} kbps</td>
                         <td>
                             <a title="Rename" 
@@ -189,18 +310,73 @@ function fetchInterfaces() {
                         </td>
                     </tr>
                 `;
-            }).join(''); // Gabungkan semua row menjadi satu string
+            }).join('');
 
-            // Update tabel hanya sekali
-            $('#interface-table-body').html(rows);
+            $('#interface-table-body').html(interfaceRows);
+            updateChartFromTable();
+
+            // Proses data traffic (jika diperlukan)
+            const updatedTraffic = {};
+            data.traffic.forEach((entry) => {
+                const srcAddress = entry['src-address'];
+                if (updatedTraffic[srcAddress]) {
+                    updatedTraffic[srcAddress].tx += entry['tx-total'];
+                    updatedTraffic[srcAddress].rx += entry['rx-total'];
+                } else {
+                    updatedTraffic[srcAddress] = {
+                        srcAddress,
+                        hostname: entry.hostname || 'N/A',
+                        macAddress: entry['mac-address'] || 'N/A',
+                        tx: entry['tx-total'],
+                        rx: entry['rx-total'],
+                    };
+                }
+            });
+
+            const trafficRows = Object.values(updatedTraffic).map((entry) => {
+                const txFormatted = formatDataSize(entry.tx);
+                const rxFormatted = formatDataSize(entry.rx);
+                return `
+                    <tr>
+                      <td>${entry.srcAddress}</td>
+                      <td>${entry.hostname}</td>
+                      <td>${entry.macAddress}</td>
+                      <td>${txFormatted}</td>
+                      <td>${rxFormatted}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            $('#traffic-table-body').html(trafficRows);
+            setLoaderMessage(`Success getting data from interface ${selectedInterfaceName}`);
+            isFetching = false;
         },
         error: function (xhr, status, error) {
-            console.error('Error fetching interfaces:', error);
+            if (status !== 'abort') {
+                console.error('Error fetching data:', error);
+                setLoaderMessage(`Failed to get data. Retrying...`);
+                isFetching = false;
+            }
         }
     });
 }
+// Fungsi untuk memformat ukuran data
+function formatDataSize(value) {
+    if (value < 1024) {
+        return value.toFixed(2) + ' Bytes';
+    } else if (value < 1048576) {
+        return (value / 1024).toFixed(2) + ' KB';
+    } else if (value < 1073741824) {
+        return (value / 1048576).toFixed(2) + ' MB';
+    } else {
+        return (value / 1073741824).toFixed(2) + ' GB';
+    }
+}
 
-setInterval(fetchInterfaces, 1000); // Polling setiap 1 detik
+// Fungsi untuk mengatur pesan loader
+function setLoaderMessage(message) {
+    $('#loader-message').text(message);
+}
 
 // Event listener untuk menangani klik pada tombol Rename
 $(document).on('click', '[data-target="#configureInterface"]', function() {
@@ -222,9 +398,15 @@ $(document).on('click', '[data-target="#configureInterface"]', function() {
         // Kamu bisa menambahkan input lain sesuai dengan kebutuhan, misalnya untuk jenis interface, status, dll
     }
 });
-</script>
 
+// Update data ketika interface berubah
+$('#interfaceSelect').on('change', function () {
+    fetchData(); // Fetch data baru ketika interface dipilih
+});
 
+// Panggil fetchData pertama kali
+fetchData();
 
-
-@endsection
+// Polling untuk mengambil data setiap 1 detik
+setInterval(fetchData, 1000);
+</script>@endsection

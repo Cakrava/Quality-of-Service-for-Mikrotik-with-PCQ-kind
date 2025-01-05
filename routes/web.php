@@ -22,6 +22,7 @@ Route::get('/logout', [AuthLoginController::class, 'logout'])->name('auth.logout
 Route::post('/savename', [DashboardController::class, 'updateInterfaceName'])->name('dashboard.save_name')->middleware('check.login');
 // Dashboard hanya bisa diakses jika login
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.dashboard')->middleware('check.login');
+Route::get('/fetch-all-data', [DashboardController::class, 'fetchAllData'])->middleware('check.login');
 Route::get('/fetch-interfaces', [DashboardController::class, 'fetchInterfaces'])->middleware('check.login');
 
 // QoS hanya bisa diakses jika login
@@ -45,4 +46,4 @@ Route::post('/delete_clientList', [NetworkController::class, 'deleteClient'])->n
 
 
 
-Route::get('/json', [DataController::class, 'data'])->name('qos.json');
+Route::get('/json/{interfaceId}', [DataController::class, 'data'])->name('qos.json');

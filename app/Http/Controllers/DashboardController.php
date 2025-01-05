@@ -104,8 +104,83 @@ class DashboardController extends Controller
     }
 
 
+    public function fetchAllData(Request $request)
+    {
+        $ip = session()->get('ip');
+        $user = session()->get('user');
+        $password = session()->get('password');
+        $API = new RouterosApi();
+        $API->debug = false;
 
-    // ambil data realtime
+        if (!$API->connect($ip, $user, $password)) {
+            return response()->json(['error' => 'Failed to connect to MikroTik'], 500);
+        }
+
+        // Ambil data interfaces
+        $interfaces = $API->comm('/interface/print');
+
+        // Ambil ID interface yang dipilih dari request
+        $interfaceId = $request->input('interface');
+        $selectedInterface = collect($interfaces)->first(function ($interface) use ($interfaceId) {
+            return $interface['.id'] === $interfaceId;
+        });
+
+        if (!$selectedInterface) {
+            return response()->json(['error' => 'Interface dengan ID ' . $interfaceId . ' tidak ditemukan'], 404);
+        }
+
+        $interfaceName = $selectedInterface['name'];
+        $aggregatedData = [];
+
+        // Ambil data traffic menggunakan torch
+        $torch = $API->comm('/tool/torch', [
+            'interface' => $interfaceName,
+            'duration' => '2',
+            'src-address' => '0.0.0.0/0',
+            'dst-address' => '0.0.0.0/0',
+        ]);
+
+        foreach ($torch as $entry) {
+            if (isset($entry['mac-protocol'], $entry['src-address'], $entry['tx'], $entry['rx'])) {
+                $src = $entry['src-address'];
+
+                if (!isset($aggregatedData[$src])) {
+                    $aggregatedData[$src] = [
+                        'mac-protocol' => $entry['mac-protocol'],
+                        'src-address' => $src,
+                        'tx-total' => 0,
+                        'rx-total' => 0,
+                        'interface' => $interfaceName,
+                        'mac-address' => null,
+                        'hostname' => null,
+                    ];
+                }
+
+                $aggregatedData[$src]['tx-total'] += (int)$entry['tx'];
+                $aggregatedData[$src]['rx-total'] += (int)$entry['rx'];
+            }
+        }
+
+        // Tambahkan data dari DHCP lease
+        foreach ($aggregatedData as $srcIp => &$entry) {
+            $dhcpLease = $API->comm('/ip/dhcp-server/lease/print', [
+                '?address' => $srcIp
+            ]);
+
+            if (!empty($dhcpLease)) {
+                $entry['mac-address'] = $dhcpLease[0]['mac-address'];
+                $entry['hostname'] = $dhcpLease[0]['host-name'];
+            }
+        }
+
+
+        // Kembalikan response dengan data interfaces dan traffic
+        return response()->json([
+            'interfaces' => $interfaces,
+            'traffic' => array_values($aggregatedData)
+        ]);
+    }
+
     public function fetchInterfaces()
     {
         $ip = session()->get('ip');

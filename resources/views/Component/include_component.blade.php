@@ -8,13 +8,15 @@
 @include('Component.modal_logout')
 @elseif($activePage == 'dashboard')
 @include('Component.modal_logout') 
+@include('Component.modal_configure_interface') 
+
 
 @elseif($activePage == 'address')
 @include('Component.modal_logout') 
 @include('Component.modal_configure_address') 
 
 
-service
+
 @elseif($activePage == 'simple_queue')
 @include('Component.modal_logout')
 @include('Component.modal_configure_simple_queue')
