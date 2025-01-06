@@ -2,6 +2,4 @@
 <br>
 
 # Screenshoot
-<p align="center"><img src="https://github.com/user-attachments/assets/54db2651-36c6-4ce5-98ba-c7c8a18ab1f7" width="1000" alt="Laravel Logo"></p>
-<br>
-
+![Gambar WhatsApp 2025-01-07 pukul 01 11 46_cc656146](https://github.com/user-attachments/assets/5f54c16a-2530-4173-b8ba-6605d54ba407)
