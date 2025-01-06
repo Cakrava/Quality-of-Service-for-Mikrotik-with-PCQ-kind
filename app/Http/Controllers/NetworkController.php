@@ -33,14 +33,14 @@ class NetworkController extends Controller
         $API->debug = false;
 
         if ($API->connect($ip, $user, $password)) {
-            
+
             $interface = $API->comm('/interface/print');
             $address = $API->comm('/ip/address/print');
 
             $data = [
                 'interface' => $interface,
                 'address' => $address,
-                
+
             ];
 
             session()->put('active_page', 'address');
@@ -145,36 +145,7 @@ class NetworkController extends Controller
         }
     }
 
-function clientList(){
-    $ip = session()->get('ip');
-    $user = session()->get('user');
-    $password = session()->get('password');
-    $API = new RouterosApi();
-    $API->debug = false;
-
-    if ($API->connect($ip, $user, $password)) {
-        // Ambil daftar lease DHCP
-        $dhcpLeases = $API->comm('/ip/dhcp-server/lease/print');
-
-        $simpleQueue = $API->comm('/queue/simple/print');
-        $interface = $API->comm('/interface/print');
-        $address = $API->comm('/ip/address/print');
-        $queueType = $API->comm('/queue/type/print');
-        $simpleQueueType = $API->comm('/queue/simple/type/print');
-
-        $data = [
-            'dhcpLeases' => $dhcpLeases,
-        ];
-
-        session()->put('active_page', 'clientList');
-        return view('Network.clientList', $data);
-    } else {
-        return redirect('failed');
-    }
-}
-
-
-    public function fetchClientData()
+    function clientList()
     {
         $ip = session()->get('ip');
         $user = session()->get('user');
@@ -184,42 +155,47 @@ function clientList(){
 
         if ($API->connect($ip, $user, $password)) {
             // Ambil daftar lease DHCP
+            $dhcpLeases = $API->comm('/ip/dhcp-server/lease/print');
 
-            $clientData = [];
+            $simpleQueue = $API->comm('/queue/simple/print');
+            $interface = $API->comm('/interface/print');
+            $address = $API->comm('/ip/address/print');
+            $queueType = $API->comm('/queue/type/print');
+            $simpleQueueType = $API->comm('/queue/simple/type/print');
 
-
-
-            $jsonData = file_get_contents(app_path('client_data.json'));
-
-            // Decode JSON menjadi array
-            $dataArray = json_decode($jsonData, true);
-
-            // Ambil nilai langsung dari array dan simpan dalam variabel terpisah
-            $srcAddress = $dataArray[0]['src_address'];
-            $interface = $dataArray[1]['interface'];
-            $hostName = $dataArray[2]['host_name'];
-
-            // Ambil data torch jika ada
-            $torchData = null;
-            if ($interface && $srcAddress) {
-                $torch = $API->comm('/tool/torch', [
-                    'interface' => $interface,
-                    'src-address' => $srcAddress,
-                    'duration' => '5s'
-                ]);
-                $torchData = !empty($torch) ? end($torch) : null;
-            }
-
-            // Simpan data client
-            $clientData[] = [
-                'host_name' => $hostName,
-                'address' => $srcAddress,
-                'interface' => $interface ?? 'N/A',
-                'tx' => $torchData['tx'] ?? '0',
-                'rx' => $torchData['rx'] ?? '0',
+            $data = [
+                'dhcpLeases' => $dhcpLeases,
             ];
-        }
 
-        return response()->json(['clients' => $clientData]);
+            session()->put('active_page', 'clientList');
+            return view('Network.clientList', $data);
+        } else {
+            return redirect('failed');
+        }
+    }
+
+    public function trafficUsage()
+    {
+
+
+        $ip = session()->get('ip');
+        $user = session()->get('user');
+        $password = session()->get('password');
+        $API = new RouterosApi();
+        $API->debug = false;
+
+        if ($API->connect($ip, $user, $password)) {
+            // Ambil data interface
+            $interface = $API->comm('/interface/print');
+
+            $data = [
+                'interface' => $interface,
+            ];
+
+            session()->put('active_page', 'trafficUsage');
+            return view('Network.trafficData', $data);
+        } else {
+            return redirect('failed');
+        }
     }
 }

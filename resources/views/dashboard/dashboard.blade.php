@@ -3,10 +3,157 @@
 @section('content')
 <?php $queue = ['name' => '']; ?>
 
+<style>
+    /* Container untuk progress bar */
+.progress-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin : 20px;
+    text-align: center;
+}
+.progress-parent {
+    width: 100%; /* Lebar diubah menjadi 100%, tapi dinamis jika ada komponen di parent yang sama */
+    flex: 1; /* Membuat lebar menjadi dinamis dan adil jika ada komponen lain di parent yang sama */
+    height: auto; /* Tinggi diubah menjadi 230px */
+    box-shadow: 0 0px 4px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    background-color: #fff;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap; 
+padding: 0 20px 20px 20px;
+margin-bottom: 10px;
+
+
+
+}
+/* Lingkaran progress bar */
+.progress-circle {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(#2E5077 0%, #ddd 0%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); */
+}
+
+/* Lingkaran dalam (untuk efek berlubang di tengah) */
+.progress-circle::after {
+    content: '';
+    position: absolute;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    background: white;
+    /* box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); */
+}
+
+/* Teks persentase */
+.progress-text {
+    position: absolute;
+    font-size: 18px;
+    font-weight: bold;
+    color: #2E5077;
+    z-index: 1;
+}
+
+/* Label di bawah progress bar */
+.progress-label {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Warna khusus untuk setiap progress bar */
+#memoryProgress {
+    background: conic-gradient(#2E5077 0%, #ddd 0%);
+}
+#cpuProgress {
+    background: conic-gradient(#a9764d 0%, #ddd 0%);
+}
+#uptimeProgress {
+    background: conic-gradient(#79D7BE 0%, #ddd 0%);
+}
+</style>
 <div class="right_col" role="main" style="margin-bottom: :20px">
-  <div class="card" style="border-radius: 10px; background-color: white; padding: 10px 0; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 100%;margin-bottom : 10px;margin-top :50px">
-  <h2 style="margin-left: 20px">Dashboard</h2>
-  </div>
+    <div style="width: 100%; display: flex; flex-direction: row; justify-content : space-between; gap: 10px;">
+        <div class="progress-parent" style="background-color: white">
+            <div class="progress-container">
+                <div class="progress-circle" id="memoryProgress">
+                    <div class="progress-text" id="memoryText">0%</div>
+                </div>
+                <div class="progress-label">Memory Usage</div>
+            </div>
+            <!-- Detail Memory -->
+            <div class="detail-container">
+                <div class="detail-item">
+                    <span class="detail-label">Total:</span>
+                    <span class="detail-value" id="totalMemory">0 MB</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Free:</span>
+                    <span class="detail-value" id="freeMemory">0 MB</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Usage:</span>
+                    <span class="detail-value" id="usedMemory">0 MB</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-parent"  style="background-color: white">
+            <div class="progress-container">
+                <div class="progress-circle" id="cpuProgress">
+                    <div class="progress-text" id="cpuText">0%</div>
+                </div>
+                <div class="progress-label">CPU Usage</div>
+            </div>
+            <!-- Detail CPU -->
+            <div class="detail-container">
+                <div class="detail-item">
+                    <span class="detail-label">Frequency:</span>
+                    <span class="detail-value" id="cpuFrequency">0 MHz</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Count:</span>
+                    <span class="detail-value" id="cpuCount">0</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">CPU:</span>
+                    <span class="detail-value" id="cpuName">N/A</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="progress-parent"  style="background-color: white">
+            <div class="progress-container">
+                <div class="progress-circle" id="uptimeProgress">
+                    <div class="progress-text" id="uptimeText">0%</div>
+                </div>
+                <div class="progress-label">Uptime (24h)</div>
+            </div>
+            <!-- Detail Uptime -->
+            <div class="detail-container">
+                <div class="detail-item">
+                    <span class="detail-label">Base Percentage:</span>
+                    <span class="detail-value" id="uptimePercentage">0%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Uptime:</span>
+                    <span class="detail-value" id="uptimeFormatted">00:00:00</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Build Time:</span>
+                    <span class="detail-value" id="buildTime">N/A</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
   <div style="display: flex; flex-direction: row; gap: 10px;">  <!-- Gunakan flexbox untuk mengatur posisi card -->
     <!-- Card pertama (tabel interfaces) -->
@@ -50,7 +197,7 @@
 
     <!-- Card kedua (misalnya, card yang menampilkan "res") -->
     <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 40%;">
-    <p><i class="fa fa-line-chart"></i> Wireless statistic</p>
+    <p><i class="fa fa-bar-chart-o"></i> Interface traffic</p>
     <canvas id="interfaceTrafficChart"></canvas>
          
     </div>
@@ -90,8 +237,13 @@
 
 
     <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px;width: 50%">
-         <p><i class="fa fa-chain-broken"></i> Traffic monitor</p>
-       
+        <div style="display: flex; flex-direction: row; justify-content: space-between;">
+            <p><i class="fa fa-line-chart"></i> Traffic usage</p>
+               
+            ><a href="{{ route('network.trafficUsage') }}"><i class="fa fa-pencil-square-o"></i> See more</a>
+               
+           </div>
+      
     <div class="form-group">
       <label for="interfaceSelect">Select Interface</label>
       <select class="form-control" id="interfaceSelect">
@@ -102,7 +254,7 @@
         @endforeach
       </select>      
     </div>
-    <p id="loader-message" style="font-weight: bold; color: teal; text-align: left;">Initializing...</p>
+    <div id="loader-message" style="margin-top: 10px; font-style: italic; color: #555;">Initialize..</div>
     <table class="table table-striped">
       <thead>
         <tr>
@@ -121,7 +273,7 @@
     
 </div>
 
-<div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px">
+<div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px;margin-bottom : 50px">
      <div style="display: flex; flex-direction: row; justify-content: space-between;">
       <p><i class="fa fa-list"></i> Queue list</p>
          
@@ -173,6 +325,7 @@
 
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -250,47 +403,296 @@ function updateChartFromTable() {
     interfaceTrafficChart.data.datasets[1].data = rxData;
     interfaceTrafficChart.update(); // Render ulang chart
 }
+// Fungsi untuk mengupdate circular progress bar
+function updateProgressBar(elementId, textId, progress, color) {
+    const progressCircle = document.getElementById(elementId);
+    const progressText = document.getElementById(textId);
 
-// Fungsi untuk mengambil data interface dan traffic secara bersamaan
-function fetchData() {
-    if (isFetching) {
+    // Update progress bar
+    progressCircle.style.background = `conic-gradient(${color} ${progress}%, #ddd ${progress}%)`;
+
+    // Update teks persentase
+    progressText.textContent = `${progress}%`;
+}
+
+// Fungsi untuk mengambil data system stats
+function fetchSystemStats() {
+    $.ajax({
+        url: '/fetch-system-stats', // Sesuaikan dengan endpoint yang benar
+        method: 'GET',
+        success: function (data) {
+            // Update circular progress bar
+            updateProgressBar('memoryProgress', 'memoryText', data.memoryUsage, '#2E5077');
+            updateProgressBar('cpuProgress', 'cpuText', data.cpuUsage, '#4DA1A9');
+            updateProgressBar('uptimeProgress', 'uptimeText', data.uptimePercentage, '#79D7BE');
+
+            // Update detail Memory
+            $('#totalMemory').text((data.totalMemory / 1024).toFixed(2) + ' MB');
+            $('#freeMemory').text((data.freeMemory / 1024).toFixed(2) + ' MB');
+            $('#usedMemory').text((data.usedMemory / 1024).toFixed(2) + ' MB');
+
+            // Update detail CPU
+            $('#cpuFrequency').text(data.cpuFrequency + ' MHz');
+            $('#cpuCount').text(data.cpuCount);
+            $('#cpuName').text(data.cpuName);
+
+            // Update detail Uptime
+            $('#uptimePercentage').text(data.uptimePercentage + '%');
+            $('#uptimeFormatted').text(data.uptimeFormatted);
+            $('#buildTime').text(data.buildTime || 'N/A');
+        },
+        error: function (xhr, status, error) {
+            console.error('Error fetching system stats:', error);
+        }
+    });
+}
+
+fetchSystemStats();
+
+// Fungsi untuk memformat ukuran data
+function formatDataSize(value) {
+    if (value < 1024) {
+        return value.toFixed(2) + ' Bytes';
+    } else if (value < 1048576) {
+        return (value / 1024).toFixed(2) + ' KB';
+    } else if (value < 1073741824) {
+        return (value / 1048576).toFixed(2) + ' MB';
+    } else {
+        return (value / 1073741824).toFixed(2) + ' GB';
+    }
+}
+
+// Fungsi untuk mengatur pesan loader
+function setLoaderMessage(message) {
+    $('#loader-message').text(message);
+}
+
+
+// function fetchData() {
+//     if (isFetching) {
+//         return;
+//     }
+
+//     const selectedInterface = $('#interfaceSelect').find(":selected").data('id');
+//     const selectedInterfaceName = $('#interfaceSelect').find(":selected").data('name');
+
+
+//     if (currentRequest) {
+//         currentRequest.abort();
+//     }
+
+//     isFetching = true;
+//     setLoaderMessage(`Getting data from interface ${selectedInterfaceName}...`);
+
+//     currentRequest = $.ajax({
+//         url: '/fetch-all-data',
+//         method: 'GET',
+//         data: { interface: selectedInterface },
+//         success: function (data) {
+//             // Simpan data interfaces ke variabel global
+//             interfacesData = data.interfaces;  // <-- Ini yang perlu diperbaiki
+
+//             // Proses data interfaces
+//             const interfaceRows = data.interfaces.map(function (interface) {
+//                 const currentTx = interface['tx-byte'] || 0;
+//                 const currentRx = interface['rx-byte'] || 0;
+//                 const previousTx = previousData[interface['name']]?.tx || 0;
+//                 const previousRx = previousData[interface['name']]?.rx || 0;
+
+//                 const txSpeedKbps = ((currentTx - previousTx) * 8 / 1000).toFixed(2);
+//                 const rxSpeedKbps = ((currentRx - previousRx) * 8 / 1000).toFixed(2);
+
+//                 previousData[interface['name']] = {
+//                     tx: currentTx,
+//                     rx: currentRx
+//                 };
+
+//                 return `
+//                     <tr>
+//                         <td>${interface['name']}</td>
+//                         <td>${interface['type']}</td>
+//                         <td>${interface['mac-address']}</td>
+//                         <td>${interface['running'] ? 'Running' : 'Not Running'}</td>
+//                         <td>${txSpeedKbps} kbps</td>
+//                         <td>${rxSpeedKbps} kbps</td>
+//                         <td>
+//                             <a title="Rename" 
+//                                data-toggle="modal" 
+//                                data-target="#configureInterface" 
+//                                class="btn btn-success" 
+//                                data-interface-name="${interface['mac-address']}">
+//                                 <i class="fa fa-edit" aria-hidden="true"> Rename</i>
+//                             </a>
+//                         </td>
+//                     </tr>
+//                 `;
+//             }).join('');
+
+//             $('#interface-table-body').html(interfaceRows);
+//             updateChartFromTable();
+
+//             // Proses data traffic (jika diperlukan)
+//             const updatedTraffic = {};
+//             data.traffic.forEach((entry) => {
+//                 const srcAddress = entry['src-address'];
+//                 if (updatedTraffic[srcAddress]) {
+//                     updatedTraffic[srcAddress].tx += entry['tx-total'];
+//                     updatedTraffic[srcAddress].rx += entry['rx-total'];
+//                 } else {
+//                     updatedTraffic[srcAddress] = {
+//                         srcAddress,
+//                         hostname: entry.hostname || 'N/A',
+//                         macAddress: entry['mac-address'] || 'N/A',
+//                         tx: entry['tx-total'],
+//                         rx: entry['rx-total'],
+//                     };
+//                 }
+//             });
+
+//             const trafficRows = Object.values(updatedTraffic).map((entry) => {
+//                 const txFormatted = formatDataSize(entry.tx);
+//                 const rxFormatted = formatDataSize(entry.rx);
+//                 return `
+//                     <tr>
+//                       <td>${entry.srcAddress}</td>
+//                       <td>${entry.hostname}</td>
+//                       <td>${entry.macAddress}</td>
+//                       <td>${txFormatted}</td>
+//                       <td>${rxFormatted}</td>
+//                     </tr>
+//                 `;
+//             }).join('');
+
+//             $('#traffic-table-body').html(trafficRows);
+//             setLoaderMessage(`Success getting data from interface ${selectedInterfaceName}`);
+//             isFetching = false;
+//             fetchData();
+//         },
+//         error: function (xhr, status, error) {
+//             if (status !== 'abort') {
+//                 console.error('Error fetching data:', error);
+//                 setLoaderMessage(`Failed to get data. Retrying...`);
+//                 isFetching = false;
+//                 fetchData();
+//             }
+//         }
+//     });
+// }
+// Variabel untuk fetchData
+let isFetchingData = false;
+let currentRequestData = null;
+
+// Variabel untuk fetchDataTraffic
+let isFetchingTraffic = false;
+let currentRequestTraffic = null;
+
+function fetchDataTraffic() {
+    if (isFetchingTraffic) {
         return;
     }
 
     const selectedInterface = $('#interfaceSelect').find(":selected").data('id');
     const selectedInterfaceName = $('#interfaceSelect').find(":selected").data('name');
 
-
-    if (currentRequest) {
-        currentRequest.abort();
+    if (currentRequestTraffic) {
+        currentRequestTraffic.abort();
     }
 
-    isFetching = true;
-    setLoaderMessage(`Getting data from interface ${selectedInterfaceName}...`);
+    isFetchingTraffic = true;
+    setLoaderMessage(`Getting traffic data from interface ${selectedInterfaceName}...`);
 
-    currentRequest = $.ajax({
-        url: '/fetch-all-data',
+    currentRequestTraffic = $.ajax({
+        url: '/fetch-traffic-data', // Endpoint untuk mengambil data traffic
         method: 'GET',
-        data: { interface: selectedInterface },
+        data: { interface: selectedInterface }, // Opsional: Jika ingin memfilter berdasarkan interface tertentu
+        success: function (data) {
+            // Proses data traffic
+            const updatedTraffic = {};
+            data.traffic.forEach((entry) => {
+                const srcAddress = entry['src-address'];
+                if (updatedTraffic[srcAddress]) {
+                    updatedTraffic[srcAddress].tx += entry['tx-total'];
+                    updatedTraffic[srcAddress].rx += entry['rx-total'];
+                } else {
+                    updatedTraffic[srcAddress] = {
+                        srcAddress,
+                        hostname: entry.hostname || 'N/A',
+                        macAddress: entry['mac-address'] || 'N/A',
+                        tx: entry['tx-total'],
+                        rx: entry['rx-total'],
+                    };
+                }
+            });
+
+            // Buat baris tabel untuk traffic
+            const trafficRows = Object.values(updatedTraffic).map((entry) => {
+                const txFormatted = formatDataSize(entry.tx);
+                const rxFormatted = formatDataSize(entry.rx);
+                return `
+                    <tr>
+                      <td>${entry.srcAddress}</td>
+                      <td>${entry.hostname}</td>
+                      <td>${entry.macAddress}</td>
+                      <td>${txFormatted}</td>
+                      <td>${rxFormatted}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Update tabel traffic
+            $('#traffic-table-body').html(trafficRows);
+
+            setLoaderMessage(`Success getting traffic data from interface ${selectedInterfaceName}`);
+            isFetchingTraffic = false;
+            setTimeout(fetchDataTraffic, 2000); // Polling setiap 2 detik
+        },
+        error: function (xhr, status, error) {
+            if (status !== 'abort') {
+                console.error('Error fetching traffic data:', error);
+                setLoaderMessage(`Failed to get traffic data. Retrying...`);
+                isFetchingTraffic = false;
+                setTimeout(fetchDataTraffic, 2000); // Retry setiap 2 detik
+            }
+        }
+    });
+}
+
+function fetchData() {
+    if (isFetchingData) {
+        return;
+    }
+
+    if (currentRequestData) {
+        currentRequestData.abort();
+    }
+
+    isFetchingData = true;
+
+    currentRequestData = $.ajax({
+        url: '/fetch-all-data', // Endpoint untuk mengambil data interfaces
+        method: 'GET',
         success: function (data) {
             // Simpan data interfaces ke variabel global
-            interfacesData = data.interfaces;  // <-- Ini yang perlu diperbaiki
+            interfacesData = data.interfaces;
 
             // Proses data interfaces
             const interfaceRows = data.interfaces.map(function (interface) {
-                const currentTx = interface['tx-byte'] || 0;
-                const currentRx = interface['rx-byte'] || 0;
-                const previousTx = previousData[interface['name']]?.tx || 0;
-                const previousRx = previousData[interface['name']]?.rx || 0;
+                const currentTx = interface['tx-byte'] || 0; // Data TX (bytes)
+                const currentRx = interface['rx-byte'] || 0; // Data RX (bytes)
+                const previousTx = previousData[interface['name']]?.tx || 0; // Data TX sebelumnya
+                const previousRx = previousData[interface['name']]?.rx || 0; // Data RX sebelumnya
 
+                // Hitung kecepatan TX dan RX dalam kbps
                 const txSpeedKbps = ((currentTx - previousTx) * 8 / 1000).toFixed(2);
                 const rxSpeedKbps = ((currentRx - previousRx) * 8 / 1000).toFixed(2);
 
+                // Simpan data TX dan RX saat ini untuk perhitungan selanjutnya
                 previousData[interface['name']] = {
                     tx: currentTx,
                     rx: currentRx
                 };
 
+                // Buat baris tabel untuk setiap interface
                 return `
                     <tr>
                         <td>${interface['name']}</td>
@@ -312,71 +714,27 @@ function fetchData() {
                 `;
             }).join('');
 
+            // Update tabel interfaces
             $('#interface-table-body').html(interfaceRows);
+
             updateChartFromTable();
 
-            // Proses data traffic (jika diperlukan)
-            const updatedTraffic = {};
-            data.traffic.forEach((entry) => {
-                const srcAddress = entry['src-address'];
-                if (updatedTraffic[srcAddress]) {
-                    updatedTraffic[srcAddress].tx += entry['tx-total'];
-                    updatedTraffic[srcAddress].rx += entry['rx-total'];
-                } else {
-                    updatedTraffic[srcAddress] = {
-                        srcAddress,
-                        hostname: entry.hostname || 'N/A',
-                        macAddress: entry['mac-address'] || 'N/A',
-                        tx: entry['tx-total'],
-                        rx: entry['rx-total'],
-                    };
-                }
-            });
-
-            const trafficRows = Object.values(updatedTraffic).map((entry) => {
-                const txFormatted = formatDataSize(entry.tx);
-                const rxFormatted = formatDataSize(entry.rx);
-                return `
-                    <tr>
-                      <td>${entry.srcAddress}</td>
-                      <td>${entry.hostname}</td>
-                      <td>${entry.macAddress}</td>
-                      <td>${txFormatted}</td>
-                      <td>${rxFormatted}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            $('#traffic-table-body').html(trafficRows);
-            setLoaderMessage(`Success getting data from interface ${selectedInterfaceName}`);
-            isFetching = false;
+            isFetchingData = false;
+            setTimeout(fetchData, 1000); // Polling setiap 1 detik
         },
         error: function (xhr, status, error) {
             if (status !== 'abort') {
                 console.error('Error fetching data:', error);
-                setLoaderMessage(`Failed to get data. Retrying...`);
-                isFetching = false;
+                isFetchingData = false;
+                setTimeout(fetchData, 1000); // Retry setiap 1 detik
             }
         }
     });
 }
-// Fungsi untuk memformat ukuran data
-function formatDataSize(value) {
-    if (value < 1024) {
-        return value.toFixed(2) + ' Bytes';
-    } else if (value < 1048576) {
-        return (value / 1024).toFixed(2) + ' KB';
-    } else if (value < 1073741824) {
-        return (value / 1048576).toFixed(2) + ' MB';
-    } else {
-        return (value / 1073741824).toFixed(2) + ' GB';
-    }
-}
 
-// Fungsi untuk mengatur pesan loader
-function setLoaderMessage(message) {
-    $('#loader-message').text(message);
-}
+// Jalankan kedua fungsi
+fetchData();
+fetchDataTraffic();
 
 // Event listener untuk menangani klik pada tombol Rename
 $(document).on('click', '[data-target="#configureInterface"]', function() {
@@ -401,12 +759,12 @@ $(document).on('click', '[data-target="#configureInterface"]', function() {
 
 // Update data ketika interface berubah
 $('#interfaceSelect').on('change', function () {
-    fetchData(); // Fetch data baru ketika interface dipilih
+    fetchDataTraffic(); // Fetch data baru ketika interface dipilih
 });
 
 // Panggil fetchData pertama kali
-fetchData();
+
 
 // Polling untuk mengambil data setiap 1 detik
-setInterval(fetchData, 1000);
+// setInterval(fetchData, 1000);
 </script>@endsection

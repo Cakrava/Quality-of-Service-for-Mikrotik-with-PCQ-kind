@@ -24,7 +24,8 @@ Route::post('/savename', [DashboardController::class, 'updateInterfaceName'])->n
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.dashboard')->middleware('check.login');
 Route::get('/fetch-all-data', [DashboardController::class, 'fetchAllData'])->middleware('check.login');
 Route::get('/fetch-interfaces', [DashboardController::class, 'fetchInterfaces'])->middleware('check.login');
-
+Route::get('/fetch-system-stats', [DashboardController::class, 'fetchSystemStats'])->middleware('check.login');
+Route::get('/fetch-traffic-data', [DashboardController::class, 'fetchTrafficData'])->middleware('check.login');
 // QoS hanya bisa diakses jika login
 Route::get('/simple_queue', [ServicesController::class, 'simple_queue'])->name('qos.simple_queue')->middleware('check.login');
 Route::post('/delete/simple_queue', [ServicesController::class, 'deleteQueueConfiguration'])->name('qos.delete_simple_queue')->middleware('check.login');
@@ -41,9 +42,7 @@ Route::post('/delete_address', [NetworkController::class, 'deleteAddress'])->nam
 
 
 Route::get('/clientList', [NetworkController::class, 'clientList'])->name('network.clientList')->middleware('check.login');
-Route::get('/fetch-client-data', [NetworkController::class, 'fetchClientData'])->name('network.fetch_client_data')->middleware('check.login');
-Route::post('/delete_clientList', [NetworkController::class, 'deleteClient'])->name('network.delete_clientList')->middleware('check.login');
+Route::get('/traffic_usage', [NetworkController::class, 'trafficUsage'])->name('network.trafficUsage')->middleware('check.login');
 
 
-
-Route::get('/json/{interfaceId}', [DataController::class, 'data'])->name('qos.json');
+Route::get('/json', [DataController::class, 'data'])->name('qos.json');

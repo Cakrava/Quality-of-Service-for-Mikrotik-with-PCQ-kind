@@ -6,6 +6,7 @@
 {{-- Network --}}
 @if($activePage == 'clientList')
 @include('Component.modal_logout')
+
 @elseif($activePage == 'dashboard')
 @include('Component.modal_logout') 
 @include('Component.modal_configure_interface') 
@@ -14,6 +15,9 @@
 @elseif($activePage == 'address')
 @include('Component.modal_logout') 
 @include('Component.modal_configure_address') 
+
+@elseif($activePage == 'trafficUsage')
+@include('Component.modal_logout')  
 
 
 

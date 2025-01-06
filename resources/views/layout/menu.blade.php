@@ -3,7 +3,7 @@
 @extends('layout.TopBar') 
 @section('menu-content')
 
-<div class="left_col scroll-view">
+<div class="left_col scroll-view" >
 
   <div class="navbar nav_title" style="border: 20;border-color :#fff;margin-top : 20px;margin-bottom : -20px">
     <a  class="site_title" style="background-color: #fff; display: flex; justify-content: center; align-items: center;">
@@ -35,6 +35,7 @@
           <li><a href="{{ route('network.address') }}">IP Address</a></li>
           
           <li><a href="{{ route('network.clientList') }}">DHCP Client</a></li>
+          <li><a href="{{ route('network.trafficUsage') }}">Traffic Data</a></li>
         </ul>
       </li>
       <li><a><i class="fa fa-bars"></i>Quality of Services<span class="fa fa-chevron-down"></span></a>
@@ -60,6 +61,7 @@
             <!-- /menu footer buttons -->
             
           </div>
+          
 
 
 @endsection
