@@ -209,7 +209,7 @@ margin-bottom: 10px;
 <div class="card" style="border-radius: 10px; background-color: white; padding: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-top: 10px;width: 50%">
   <div style="display: flex; flex-direction: row; justify-content: space-between;">   
   <p><i class="fa fa-link"></i> Address</p>
-  ><a href="{{ route('network.address') }}"><i class="fa fa-pencil-square-o"></i> Manage address</a>
+  <a href="{{ route('network.address') }}"><i class="fa fa-pencil-square-o"></i> Manage address</a>
 </div>
      <table class="table table-striped">
       <thead>
@@ -240,7 +240,7 @@ margin-bottom: 10px;
         <div style="display: flex; flex-direction: row; justify-content: space-between;">
             <p><i class="fa fa-line-chart"></i> Traffic usage</p>
                
-            ><a href="{{ route('network.trafficUsage') }}"><i class="fa fa-pencil-square-o"></i> See more</a>
+            <a href="{{ route('network.trafficUsage') }}"><i class="fa fa-pencil-square-o"></i> See more</a>
                
            </div>
       
@@ -277,7 +277,7 @@ margin-bottom: 10px;
      <div style="display: flex; flex-direction: row; justify-content: space-between;">
       <p><i class="fa fa-list"></i> Queue list</p>
          
-      ><a href="{{ route('qos.simple_queue') }}"><i class="fa fa-pencil-square-o"></i> Manage queue</a>
+      <a href="{{ route('qos.simple_queue') }}"><i class="fa fa-pencil-square-o"></i> Manage queue</a>
          
      </div>
 
@@ -354,15 +354,19 @@ const interfaceTrafficData = {
         }
     ]
 };
-
-// Konfigurasi chart
 const config = {
     type: 'bar', // Jenis chart (bar chart)
     data: interfaceTrafficData,
     options: {
         scales: {
             y: {
-                beginAtZero: true // Mulai sumbu Y dari 0
+                beginAtZero: true, // Mulai sumbu Y dari 0
+                ticks: {
+                    // Gunakan callback untuk menampilkan nilai yang sudah diformat
+                    callback: function (value) {
+                        return formatSpeed(value); // Format nilai ke satuan yang sesuai
+                    }
+                }
             }
         },
         responsive: true, // Chart responsif
@@ -371,38 +375,73 @@ const config = {
                 position: 'top', // Posisi legend
             },
             tooltip: {
-                enabled: true // Aktifkan tooltip
+                enabled: true, // Aktifkan tooltip
+                callbacks: {
+                    // Gunakan callback untuk menampilkan nilai yang sudah diformat di tooltip
+                    label: function (context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += formatSpeed(context.raw); // Format nilai ke satuan yang sesuai
+                        return label;
+                    }
+                }
             }
         }
     }
 };
 
+function updateChartFromTable() {
+    const labels = []; // Nama-nama interface
+    const txData = []; // Data TX (dalam bits)
+    const rxData = []; // Data RX (dalam bits)
+
+    // Loop melalui setiap baris di tabel
+    $('#interface-table-body tr').each(function () {
+        const cells = $(this).find('td'); // Ambil semua sel di baris ini
+        labels.push(cells.eq(0).text()); // Nama interface (kolom pertama)
+
+        // Ambil nilai numerik (txDiff dan rxDiff) dari tabel
+        const txSpeedText = cells.eq(4).text(); // TX (contoh: "100.00 kbps")
+        const rxSpeedText = cells.eq(5).text(); // RX (contoh: "1.50 Mbps")
+
+        // Konversi teks yang sudah diformat kembali ke nilai numerik (dalam bits)
+        const txBits = parseFormattedSpeed(txSpeedText); // Konversi ke bits
+        const rxBits = parseFormattedSpeed(rxSpeedText); // Konversi ke bits
+
+        // Simpan nilai numerik (dalam bits) untuk plotting di chart
+        txData.push(txBits);
+        rxData.push(rxBits);
+    });
+
+    // Update data chart
+    interfaceTrafficChart.data.labels = labels;
+    interfaceTrafficChart.data.datasets[0].data = txData; // Data TX (dalam bits)
+    interfaceTrafficChart.data.datasets[1].data = rxData; // Data RX (dalam bits)
+    interfaceTrafficChart.update(); // Render ulang chart
+}
+
+// Fungsi untuk mengonversi teks yang sudah diformat kembali ke nilai numerik (dalam bits)
+function parseFormattedSpeed(speedText) {
+    const value = parseFloat(speedText); // Ambil nilai numeriknya
+    if (speedText.includes('kbps')) {
+        return value * 1000; // Konversi kbps ke bits
+    } else if (speedText.includes('Mbps')) {
+        return value * 1000000; // Konversi Mbps ke bits
+    } else if (speedText.includes('Gbps')) {
+        return value * 1000000000; // Konversi Gbps ke bits
+    } else {
+        return value; // Nilai sudah dalam bps
+    }
+}
 // Buat bar chart
 const interfaceTrafficChart = new Chart(
     document.getElementById('interfaceTrafficChart'), // Elemen canvas
     config // Konfigurasi chart
 );
 
-// Fungsi untuk mengupdate data bar chart berdasarkan data tabel
-function updateChartFromTable() {
-    const labels = []; // Nama-nama interface
-    const txData = []; // Data TX
-    const rxData = []; // Data RX
 
-    // Loop melalui setiap baris di tabel
-    $('#interface-table-body tr').each(function () {
-        const cells = $(this).find('td'); // Ambil semua sel di baris ini
-        labels.push(cells.eq(0).text()); // Nama interface (kolom pertama)
-        txData.push(parseFloat(cells.eq(4).text())); // TX (kolom kelima)
-        rxData.push(parseFloat(cells.eq(5).text())); // RX (kolom keenam)
-    });
-
-    // Update data chart
-    interfaceTrafficChart.data.labels = labels;
-    interfaceTrafficChart.data.datasets[0].data = txData;
-    interfaceTrafficChart.data.datasets[1].data = rxData;
-    interfaceTrafficChart.update(); // Render ulang chart
-}
 // Fungsi untuk mengupdate circular progress bar
 function updateProgressBar(elementId, textId, progress, color) {
     const progressCircle = document.getElementById(elementId);
@@ -427,9 +466,9 @@ function fetchSystemStats() {
             updateProgressBar('uptimeProgress', 'uptimeText', data.uptimePercentage, '#79D7BE');
 
             // Update detail Memory
-            $('#totalMemory').text((data.totalMemory / 1024).toFixed(2) + ' MB');
-            $('#freeMemory').text((data.freeMemory / 1024).toFixed(2) + ' MB');
-            $('#usedMemory').text((data.usedMemory / 1024).toFixed(2) + ' MB');
+            $('#totalMemory').text((data.totalMemory / (1024 * 1024)).toFixed(2) + ' MB');
+$('#freeMemory').text((data.freeMemory / (1024 * 1024)).toFixed(2) + ' MB');
+$('#usedMemory').text((data.usedMemory / (1024 * 1024)).toFixed(2) + ' MB');
 
             // Update detail CPU
             $('#cpuFrequency').text(data.cpuFrequency + ' MHz');
@@ -440,9 +479,11 @@ function fetchSystemStats() {
             $('#uptimePercentage').text(data.uptimePercentage + '%');
             $('#uptimeFormatted').text(data.uptimeFormatted);
             $('#buildTime').text(data.buildTime || 'N/A');
+            fetchSystemStats();
         },
         error: function (xhr, status, error) {
             console.error('Error fetching system stats:', error);
+            fetchSystemStats();
         }
     });
 }
@@ -468,117 +509,6 @@ function setLoaderMessage(message) {
 }
 
 
-// function fetchData() {
-//     if (isFetching) {
-//         return;
-//     }
-
-//     const selectedInterface = $('#interfaceSelect').find(":selected").data('id');
-//     const selectedInterfaceName = $('#interfaceSelect').find(":selected").data('name');
-
-
-//     if (currentRequest) {
-//         currentRequest.abort();
-//     }
-
-//     isFetching = true;
-//     setLoaderMessage(`Getting data from interface ${selectedInterfaceName}...`);
-
-//     currentRequest = $.ajax({
-//         url: '/fetch-all-data',
-//         method: 'GET',
-//         data: { interface: selectedInterface },
-//         success: function (data) {
-//             // Simpan data interfaces ke variabel global
-//             interfacesData = data.interfaces;  // <-- Ini yang perlu diperbaiki
-
-//             // Proses data interfaces
-//             const interfaceRows = data.interfaces.map(function (interface) {
-//                 const currentTx = interface['tx-byte'] || 0;
-//                 const currentRx = interface['rx-byte'] || 0;
-//                 const previousTx = previousData[interface['name']]?.tx || 0;
-//                 const previousRx = previousData[interface['name']]?.rx || 0;
-
-//                 const txSpeedKbps = ((currentTx - previousTx) * 8 / 1000).toFixed(2);
-//                 const rxSpeedKbps = ((currentRx - previousRx) * 8 / 1000).toFixed(2);
-
-//                 previousData[interface['name']] = {
-//                     tx: currentTx,
-//                     rx: currentRx
-//                 };
-
-//                 return `
-//                     <tr>
-//                         <td>${interface['name']}</td>
-//                         <td>${interface['type']}</td>
-//                         <td>${interface['mac-address']}</td>
-//                         <td>${interface['running'] ? 'Running' : 'Not Running'}</td>
-//                         <td>${txSpeedKbps} kbps</td>
-//                         <td>${rxSpeedKbps} kbps</td>
-//                         <td>
-//                             <a title="Rename" 
-//                                data-toggle="modal" 
-//                                data-target="#configureInterface" 
-//                                class="btn btn-success" 
-//                                data-interface-name="${interface['mac-address']}">
-//                                 <i class="fa fa-edit" aria-hidden="true"> Rename</i>
-//                             </a>
-//                         </td>
-//                     </tr>
-//                 `;
-//             }).join('');
-
-//             $('#interface-table-body').html(interfaceRows);
-//             updateChartFromTable();
-
-//             // Proses data traffic (jika diperlukan)
-//             const updatedTraffic = {};
-//             data.traffic.forEach((entry) => {
-//                 const srcAddress = entry['src-address'];
-//                 if (updatedTraffic[srcAddress]) {
-//                     updatedTraffic[srcAddress].tx += entry['tx-total'];
-//                     updatedTraffic[srcAddress].rx += entry['rx-total'];
-//                 } else {
-//                     updatedTraffic[srcAddress] = {
-//                         srcAddress,
-//                         hostname: entry.hostname || 'N/A',
-//                         macAddress: entry['mac-address'] || 'N/A',
-//                         tx: entry['tx-total'],
-//                         rx: entry['rx-total'],
-//                     };
-//                 }
-//             });
-
-//             const trafficRows = Object.values(updatedTraffic).map((entry) => {
-//                 const txFormatted = formatDataSize(entry.tx);
-//                 const rxFormatted = formatDataSize(entry.rx);
-//                 return `
-//                     <tr>
-//                       <td>${entry.srcAddress}</td>
-//                       <td>${entry.hostname}</td>
-//                       <td>${entry.macAddress}</td>
-//                       <td>${txFormatted}</td>
-//                       <td>${rxFormatted}</td>
-//                     </tr>
-//                 `;
-//             }).join('');
-
-//             $('#traffic-table-body').html(trafficRows);
-//             setLoaderMessage(`Success getting data from interface ${selectedInterfaceName}`);
-//             isFetching = false;
-//             fetchData();
-//         },
-//         error: function (xhr, status, error) {
-//             if (status !== 'abort') {
-//                 console.error('Error fetching data:', error);
-//                 setLoaderMessage(`Failed to get data. Retrying...`);
-//                 isFetching = false;
-//                 fetchData();
-//             }
-//         }
-//     });
-// }
-// Variabel untuk fetchData
 let isFetchingData = false;
 let currentRequestData = null;
 
@@ -626,8 +556,8 @@ function fetchDataTraffic() {
 
             // Buat baris tabel untuk traffic
             const trafficRows = Object.values(updatedTraffic).map((entry) => {
-                const txFormatted = formatDataSize(entry.tx);
-                const rxFormatted = formatDataSize(entry.rx);
+                const txFormatted = formatDataSize(entry.tx); // Benar untuk kecepatan jaringan
+                const rxFormatted = formatDataSize(entry.rx); // Benar untuk kecepatan jaringan
                 return `
                     <tr>
                       <td>${entry.srcAddress}</td>
@@ -657,6 +587,18 @@ function fetchDataTraffic() {
     });
 }
 
+function formatSpeed(value) {
+    const valueInBits = value * 8; // Konversi byte ke bits
+    if (valueInBits < 1000) {
+        return valueInBits.toFixed(2) + ' bps'; // bits per second
+    } else if (valueInBits < 1000000) {
+        return (valueInBits / 1000).toFixed(2) + ' kbps'; // kilobits per second
+    } else if (valueInBits < 1000000000) {
+        return (valueInBits / 1000000).toFixed(2) + ' Mbps'; // megabits per second
+    } else {
+        return (valueInBits / 1000000000).toFixed(2) + ' Gbps'; // gigabits per second
+    }
+}
 function fetchData() {
     if (isFetchingData) {
         return;
@@ -675,22 +617,25 @@ function fetchData() {
             // Simpan data interfaces ke variabel global
             interfacesData = data.interfaces;
 
-            // Proses data interfaces
             const interfaceRows = data.interfaces.map(function (interface) {
-                const currentTx = interface['tx-byte'] || 0; // Data TX (bytes)
-                const currentRx = interface['rx-byte'] || 0; // Data RX (bytes)
-                const previousTx = previousData[interface['name']]?.tx || 0; // Data TX sebelumnya
-                const previousRx = previousData[interface['name']]?.rx || 0; // Data RX sebelumnya
+    const currentTx = interface['tx-byte'] || 0; // Data TX (bytes)
+    const currentRx = interface['rx-byte'] || 0; // Data RX (bytes)
+    const previousTx = previousData[interface['name']]?.tx || 0; // Data TX sebelumnya
+    const previousRx = previousData[interface['name']]?.rx || 0; // Data RX sebelumnya
 
-                // Hitung kecepatan TX dan RX dalam kbps
-                const txSpeedKbps = ((currentTx - previousTx) * 8 / 1000).toFixed(2);
-                const rxSpeedKbps = ((currentRx - previousRx) * 8 / 1000).toFixed(2);
+    // Hitung selisih TX dan RX (dalam bytes)
+    const txDiff = currentTx - previousTx;
+    const rxDiff = currentRx - previousRx;
 
-                // Simpan data TX dan RX saat ini untuk perhitungan selanjutnya
-                previousData[interface['name']] = {
-                    tx: currentTx,
-                    rx: currentRx
-                };
+    // Konversi ke satuan yang sesuai (kbps, Mbps, Gbps)
+    const txSpeed = formatSpeed(txDiff); // Contoh: "100.00 kbps"
+    const rxSpeed = formatSpeed(rxDiff); // Contoh: "1.50 Mbps"
+
+    // Simpan data TX dan RX saat ini untuk perhitungan selanjutnya
+    previousData[interface['name']] = {
+        tx: currentTx,
+        rx: currentRx
+    };
 
                 // Buat baris tabel untuk setiap interface
                 return `
@@ -699,8 +644,8 @@ function fetchData() {
                         <td>${interface['type']}</td>
                         <td>${interface['mac-address']}</td>
                         <td>${interface['running'] ? 'Running' : 'Not Running'}</td>
-                        <td>${txSpeedKbps} kbps</td>
-                        <td>${rxSpeedKbps} kbps</td>
+                        <td>${txSpeed}</td>
+                        <td>${rxSpeed}</td>
                         <td>
                             <a title="Rename" 
                                data-toggle="modal" 

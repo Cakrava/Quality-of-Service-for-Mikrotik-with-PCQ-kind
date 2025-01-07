@@ -59,10 +59,14 @@
             <!-- Konten utama dengan scrollable-content -->
             <div class="scrollable-content">
                @yield('content')
+              
             </div>
-         </div>
-      </div>
 
+          
+         </div>
+         
+      </div>
+     
       <!-- Scripts -->
       <script src="{{ asset('asset/gentelella/vendors/jquery/dist/jquery.min.js')}}"></script>
       <script src="{{ asset('asset/gentelella/vendors/bootstrap/dist/js/bootstrap.min.js')}}"></script>
